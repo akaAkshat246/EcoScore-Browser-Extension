@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "EcoScore",
+  "version": "2.0.0",
+  "description": "AI-Powered Sustainability Rating for ANY Shopping Website. See EcoScores, real CO₂ estimates and AI-generated eco-friendly alternatives — on Amazon, Flipkart, eBay, Etsy, Shopify stores, Walmart, and every e-commerce site.",
+  "permissions": ["activeTab", "storage", "identity"],
+  "host_permissions": ["*://*/*"],
+  "oauth2": {
+    "client_id": "804108470218-jm4flor2sru9p65rimjci749evm05nsk.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["ecoDatabase.js", "content.js"],
+      "css": ["widget.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "EcoScore — Sustainability Rating",
+    "default_icon": {
+      "16":  "assets/icon16.png",
+      "32":  "assets/icon32.png",
+      "48":  "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16":  "assets/icon16.png",
+    "32":  "assets/icon32.png",
+    "48":  "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

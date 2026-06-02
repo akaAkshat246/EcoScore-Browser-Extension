@@ -1,0 +1,30 @@
+{
+  "users": {
+    "sandbox_dev_1337": {
+      "googleId": "sandbox_dev_1337",
+      "email": "eco.developer@ecoscore.test",
+      "name": "Eco Sandbox Developer",
+      "picture": "https://lh3.googleusercontent.com/a/default-user=s96-c",
+      "installDate": "2026-06-02T03:08:45.438Z",
+      "lastSeen": "2026-06-02T03:10:56.474Z",
+      "pagesScanned": 1,
+      "averageEcoScore": 52,
+      "carbonSavedKg": 0.2
+    },
+    "111131050398512860169": {
+      "googleId": "111131050398512860169",
+      "email": "akshatavs1122@gmail.com",
+      "name": "Akshat Vats",
+      "picture": "https://lh3.googleusercontent.com/a/ACg8ocJEplODnUZhrAvQ_9LhczDRhS9FFTVysTwNHbnncgk5SBQLAngJ=s96-c",
+      "installDate": "2026-06-02T04:01:09.412Z",
+      "lastSeen": "2026-06-02T09:31:56.657Z",
+      "pagesScanned": 16,
+      "averageEcoScore": 54.4,
+      "carbonSavedKg": 7
+    }
+  },
+  "systemStats": {
+    "totalScans": 17,
+    "totalCarbonSavedKg": 7.2
+  }
+}

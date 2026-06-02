@@ -1,0 +1,557 @@
+/* ============================================================
+   EcoScore — Floating Widget Styles
+   Injected via manifest content_scripts CSS
+   NOTE: @import is intentionally removed — Google Fonts won't
+   load inside content script CSS due to CSP. We use system
+   font stack + Inter loads via the page itself if present.
+   ============================================================ */
+
+/* ─── Reset & Font Stack ─────────────────────────────────── */
+#ecoscore-widget-root,
+#ecoscore-widget-root * {
+  box-sizing: border-box !important;
+  font-family: -apple-system, 'Inter', BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif !important;
+  line-height: normal !important;
+  letter-spacing: normal !important;
+}
+
+/* ─── CSS Variables ──────────────────────────────────────── */
+#ecoscore-widget-root {
+  --eco-bg:       #0d1117;
+  --eco-s1:       #161b22;
+  --eco-s2:       #1c2430;
+  --eco-s3:       #21262d;
+  --eco-border:   rgba(255,255,255,0.08);
+  --eco-text:     #e6edf3;
+  --eco-muted:    #8b949e;
+  --eco-dim:      #484f58;
+  --eco-green:    #3fb950;
+}
+
+/* ─── Widget Root Container ──────────────────────────────── */
+.eco-widget {
+  position: fixed !important;
+  top: 100px !important;
+  right: 20px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  pointer-events: auto !important;
+  /* Drag support — position overridden by JS when dragged */
+}
+
+/* ─── Toggle Pill ─────────────────────────────────────── */
+.eco-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 9px 14px !important;
+  background: #0d1117 !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+  border-radius: 50px !important;
+  cursor: grab !important;           /* <─ indicates draggable */
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(63,185,80,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.05) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease !important;
+  color: #e6edf3 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: none !important;     /* <─ enables pointer events on mobile */
+}
+.eco-toggle-btn:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow:
+    0 14px 42px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(63,185,80,0.45),
+    0 0 18px rgba(63,185,80,0.12) !important;
+}
+
+/* While dragging: cursor + glow ring + slight dim */
+.eco-toggle-btn.eco-dragging,
+.eco-toggle-btn:active {
+  cursor: grabbing !important;
+}
+.eco-toggle-btn.eco-dragging {
+  opacity: 0.82 !important;
+  transform: scale(0.96) !important;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.7),
+    0 0 0 2px rgba(63,185,80,0.55),
+    0 0 32px rgba(63,185,80,0.28) !important;  /* green aura */
+}
+
+/* Root during drag: collapse panel immediately so it doesn't trail */
+.eco-is-dragging .eco-panel {
+  opacity: 0 !important;
+  transform: scale(0.88) translateY(-8px) !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+
+/* Snap spring: micro-bounce on drop */
+.eco-snap .eco-toggle-btn {
+  animation: ecoSnapSpring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+@keyframes ecoSnapSpring {
+  0%   { transform: scale(0.92); }
+  60%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.eco-toggle-leaf  { font-size: 15px !important; }
+.eco-toggle-grade { font-size: 14px !important; font-weight: 800 !important; }
+.eco-toggle-label { font-size: 11px !important; color: #8b949e !important; font-weight: 500 !important; }
+
+
+/* ─── Panel ──────────────────────────────────────────────── */
+.eco-panel {
+  width: 310px !important;
+  max-height: calc(100vh - 160px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: #0d1117 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  transform-origin: top right !important;
+  /* Hidden by default — shown via JS class toggle */
+  opacity: 0 !important;
+  transform: scale(0.88) translateY(-8px) !important;
+  pointer-events: none !important;
+  transition:
+    opacity 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255,255,255,0.1) transparent !important;
+}
+.eco-panel::-webkit-scrollbar { width: 4px !important; }
+.eco-panel::-webkit-scrollbar-track { background: transparent !important; }
+.eco-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1) !important; border-radius: 4px !important; }
+
+/* Panel open state — toggled by JS */
+.eco-widget--open .eco-panel {
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
+  pointer-events: auto !important;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.eco-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 13px 15px 9px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%) !important;
+  cursor: grab !important; /* drag from header */
+  user-select: none !important;
+}
+.eco-header:active { cursor: grabbing !important; }
+.eco-header-left {}
+.eco-logo {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: #3fb950 !important;
+  letter-spacing: -0.02em !important;
+}
+.eco-platform {
+  font-size: 10.5px !important;
+  color: #8b949e !important;
+  margin-top: 1px !important;
+}
+.eco-close-btn {
+  background: rgba(255,255,255,0.06) !important;
+  border: none !important;
+  color: #8b949e !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.15s, color 0.15s !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+.eco-close-btn:hover {
+  background: rgba(255,255,255,0.14) !important;
+  color: #e6edf3 !important;
+}
+
+/* ─── Score Ring Section ─────────────────────────────────── */
+.eco-score-section {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 15px !important;
+  background: #161b22 !important;
+}
+.eco-ring-wrapper {
+  position: relative !important;
+  width: 78px !important;
+  height: 78px !important;
+  flex-shrink: 0 !important;
+}
+.eco-ring { width: 78px !important; height: 78px !important; }
+.eco-ring-bg {
+  fill: none !important;
+  stroke: rgba(255,255,255,0.07) !important;
+  stroke-width: 7 !important;
+}
+.eco-ring-fill {
+  fill: none !important;
+  stroke-width: 7 !important;
+  stroke-linecap: round !important;
+  /* Start at 0 (full offset = no fill) — animated from JS */
+  transition: stroke-dashoffset 1.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.eco-ring-inner {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.eco-score-num {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #e6edf3 !important;
+  line-height: 1 !important;
+}
+.eco-score-max { font-size: 9px !important; color: #8b949e !important; margin-top: 1px !important; }
+.eco-grade-info { flex: 1 !important; min-width: 0 !important; }
+.eco-grade-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 9px !important;
+  border-radius: 20px !important;
+  border: 1px solid !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  margin-bottom: 5px !important;
+}
+.eco-grade-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 5px !important;
+}
+.eco-product-name {
+  font-size: 10.5px !important;
+  color: #8b949e !important;
+  line-height: 1.45 !important;
+  word-break: break-word !important;
+}
+
+/* ─── Score Bar ──────────────────────────────────────────── */
+.eco-bar-wrap {
+  padding: 0 15px 13px !important;
+  background: #161b22 !important;
+}
+.eco-bar-track {
+  height: 5px !important;
+  background: rgba(255,255,255,0.06) !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+}
+.eco-bar-fill {
+  height: 100% !important;
+  border-radius: 3px !important;
+  width: 0% !important; /* animated from JS */
+  transition: width 1.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.eco-bar-labels {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-top: 4px !important;
+  font-size: 9px !important;
+  color: #484f58 !important;
+}
+
+/* ─── Sections ───────────────────────────────────────────── */
+.eco-section {
+  padding: 11px 15px !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+}
+.eco-section-title {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #8b949e !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 7px !important;
+}
+
+/* ─── Reason Card ────────────────────────────────────────── */
+.eco-reason-card {
+  background: #1c2430 !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 9px !important;
+  padding: 9px 11px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+.eco-keyword-tag {
+  background: rgba(63,185,80,0.12) !important;
+  color: #3fb950 !important;
+  border: 1px solid rgba(63,185,80,0.25) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  margin-top: 1px !important;
+}
+.eco-reason-text { font-size: 11.5px !important; color: #c9d1d9 !important; line-height: 1.5 !important; }
+
+/* ─── CO2 Card ───────────────────────────────────────────── */
+.eco-co2-card {
+  background: #1c2430 !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 9px !important;
+  padding: 9px 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+}
+.eco-co2-num { font-size: 19px !important; font-weight: 800 !important; color: #e6edf3 !important; }
+.eco-co2-unit { font-size: 10px !important; font-weight: 500 !important; color: #8b949e !important; }
+.eco-co2-label { font-size: 10.5px !important; color: #8b949e !important; text-align: right !important; max-width: 130px !important; line-height: 1.4 !important; }
+
+/* ─── CO2 Explainer Toggle ───────────────────────────────── */
+.eco-co2-learn-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #8b949e !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: color 0.15s !important;
+}
+.eco-co2-learn-btn:hover { color: #c9d1d9 !important; }
+.eco-co2-learn-arrow {
+  display: inline-block !important;
+  transition: transform 0.2s !important;
+  font-size: 8px !important;
+}
+.eco-co2-learn-btn.open .eco-co2-learn-arrow { transform: rotate(90deg) !important; }
+.eco-co2-explainer {
+  display: none !important;
+  margin-top: 9px !important;
+  background: #111820 !important;
+  border: 1px solid rgba(255,109,0,0.18) !important;
+  border-left: 3px solid #ff6d00 !important;
+  border-radius: 8px !important;
+  padding: 9px 11px !important;
+  font-size: 10.5px !important;
+  color: #c9d1d9 !important;
+  line-height: 1.65 !important;
+}
+.eco-co2-explainer.eco-visible { display: block !important; }
+.eco-co2-explainer strong { color: #ffb347 !important; font-weight: 700 !important; }
+
+/* ─── Alternatives ───────────────────────────────────────── */
+.eco-alt-list { display: flex !important; flex-direction: column !important; gap: 5px !important; }
+.eco-alt-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #1c2430 !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  transition: background 0.15s !important;
+}
+.eco-alt-item:hover { background: #21262d !important; }
+.eco-alt-icon { font-size: 15px !important; flex-shrink: 0 !important; }
+.eco-alt-name { flex: 1 !important; font-size: 11.5px !important; color: #c9d1d9 !important; font-weight: 500 !important; }
+.eco-alt-badge { font-size: 10.5px !important; font-weight: 700 !important; padding: 2px 7px !important; border-radius: 20px !important; flex-shrink: 0 !important; }
+
+/* ─── Footer ─────────────────────────────────────────────── */
+.eco-footer {
+  padding: 8px 15px !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 9.5px !important;
+  color: #484f58 !important;
+  background: #0d1117 !important;
+}
+.eco-footer-dot { opacity: 0.4 !important; }
+
+/* ─── Category Chip ──────────────────────────────────────── */
+.eco-category-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-top: 7px !important;
+  background: rgba(63,185,80,0.07) !important;
+  border: 1px solid rgba(63,185,80,0.18) !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 9.5px !important;
+  color: #8b949e !important;
+  font-weight: 500 !important;
+}
+
+/* ─── Alternatives Loading Skeleton ─────────────────────── */
+.eco-alts-loading {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 10px 2px !important;
+  font-size: 11px !important;
+  color: #8b949e !important;
+}
+.eco-loading-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #3fb950 !important;
+  animation: ecoDotBounce 1.2s infinite ease-in-out !important;
+  flex-shrink: 0 !important;
+}
+.eco-loading-dot:nth-child(2) { animation-delay: 0.2s !important; }
+.eco-loading-dot:nth-child(3) { animation-delay: 0.4s !important; }
+@keyframes ecoDotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1.0); opacity: 1.0; }
+}
+
+/* ─── Alt Info Sub-labels ────────────────────────────────── */
+.eco-alt-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.eco-alt-reason {
+  font-size: 9.5px !important;
+  color: #8b949e !important;
+  line-height: 1.4 !important;
+  display: block !important;
+}
+.eco-alt-where {
+  font-size: 9px !important;
+  color: #3fb950 !important;
+  font-weight: 500 !important;
+  display: block !important;
+}
+.eco-alt-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  background: #1c2430 !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 9px !important;
+  padding: 8px 10px !important;
+  transition: background 0.15s, transform 0.12s !important;
+}
+.eco-alt-item[onclick]:hover {
+  background: #21262d !important;
+  transform: translateX(-2px) !important;
+  border-color: rgba(63,185,80,0.2) !important;
+}
+.eco-alt-icon { font-size: 16px !important; flex-shrink: 0 !important; margin-top: 1px !important; }
+.eco-alt-name { font-size: 11.5px !important; color: #c9d1d9 !important; font-weight: 600 !important; display: block !important; }
+.eco-alt-badge { font-size: 10.5px !important; font-weight: 700 !important; padding: 2px 7px !important; border-radius: 20px !important; flex-shrink: 0 !important; margin-top: 2px !important; }
+
+/* ─── AI Badge & No-alts ─────────────────────────────────── */
+.eco-ai-badge {
+  margin-top: 8px !important;
+  font-size: 9.5px !important;
+  color: #3fb950 !important;
+  text-align: center !important;
+  opacity: 0.8 !important;
+  font-style: italic !important;
+}
+.eco-ai-badge--fallback { color: #8b949e !important; }
+.eco-no-alts { font-size: 11px !important; color: #8b949e !important; text-align: center !important; padding: 8px !important; }
+
+/* ─── Toast notification ─────────────────────────────────── */
+.eco-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  background: #161b22 !important;
+  border: 1px solid rgba(63,185,80,0.3) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px !important;
+  font-size: 12px !important;
+  color: #e6edf3 !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+  z-index: 2147483646 !important;
+  animation: ecoToastIn 0.3s ease, ecoToastOut 0.3s ease 2.5s forwards !important;
+}
+@keyframes ecoToastIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ecoToastOut { to{opacity:0;transform:translateY(8px)} }
+
+/* ─── Toast notification ─────────────────────────────────── */
+.eco-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  background: #161b22 !important;
+  border: 1px solid rgba(63,185,80,0.3) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px !important;
+  font-size: 12px !important;
+  color: #e6edf3 !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+  z-index: 2147483646 !important;
+  animation: ecoToastIn 0.3s ease, ecoToastOut 0.3s ease 2.5s forwards !important;
+}
+@keyframes ecoToastIn {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+@keyframes ecoToastOut {
+  to { opacity:0; transform: translateY(8px); }
+}
+
+/* ─── Alt Carbon Savings Badge ─── */
+.eco-alt-savings {
+  font-size: 9px !important;
+  color: #3fb950 !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  margin-top: 3px !important;
+  background: rgba(63, 185, 80, 0.1) !important;
+  border: 1px solid rgba(63, 185, 80, 0.2) !important;
+  border-radius: 4px !important;
+  padding: 1.5px 6px !important;
+  width: fit-content !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}

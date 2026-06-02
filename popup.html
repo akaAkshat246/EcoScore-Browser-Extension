@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoScore</title>
+  <link rel="stylesheet" href="popup.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="popup-root" id="popup-root">
+
+    <!-- ── Header ── -->
+    <header class="popup-header">
+      <div class="header-brand">
+        <span class="brand-leaf" aria-hidden="true">🌿</span>
+        <span class="brand-name">EcoScore</span>
+        <span class="brand-version">v2</span>
+      </div>
+      <div class="header-tagline">Universal Sustainability AI · Any Shopping Site</div>
+    </header>
+
+    <!-- ── Tab Bar ── -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" id="tab-score" role="tab" aria-selected="true">
+        🌱 Score
+      </button>
+      <button class="tab-btn" id="tab-profile" role="tab" aria-selected="false">
+        👤 Profile
+      </button>
+      <button class="tab-btn" id="tab-settings" role="tab" aria-selected="false">
+        ⚙️ AI Setup
+      </button>
+    </div>
+
+    <!-- ══ TAB: SCORE ══════════════════════════════════════════ -->
+    <div id="pane-score" class="tab-pane active">
+
+      <!-- Skeleton Loading -->
+      <div id="loading-state" class="loading-state" aria-label="Loading score…" aria-live="polite">
+        <div class="skeleton-hero">
+          <div class="skeleton-ring"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton-line w60"></div>
+            <div class="skeleton-line w40"></div>
+            <div class="skeleton-line w80"></div>
+          </div>
+        </div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card short"></div>
+      </div>
+
+      <!-- No Data -->
+      <div id="no-data" class="empty-state" style="display:none" role="status">
+        <div class="empty-icon" aria-hidden="true">🌎</div>
+        <div class="empty-title">No product detected</div>
+        <div class="empty-desc">Navigate to any product page on any shopping website to see its EcoScore</div>
+        <div class="supported-sites">
+          <span class="site-chip">🛒 Amazon</span>
+          <span class="site-chip">🛍️ Flipkart</span>
+          <span class="site-chip">🏷️ eBay</span>
+          <span class="site-chip">🎨 Etsy</span>
+          <span class="site-chip">🏪 Shopify</span>
+          <span class="site-chip">+ Any site</span>
+        </div>
+      </div>
+
+      <!-- Stale Warning -->
+      <div id="stale-warning" class="stale-warning" style="display:none" role="alert">
+        ⚠️ Score from a previous session — visit a product page to refresh
+      </div>
+
+      <!-- Product Card -->
+      <div id="product-card" class="product-card" style="display:none" role="main">
+
+        <div class="score-hero">
+          <div class="score-ring-wrap" aria-hidden="true">
+            <svg class="score-ring" viewBox="0 0 100 100" role="presentation">
+              <circle cx="50" cy="50" r="40" class="ring-bg" />
+              <circle cx="50" cy="50" r="40" class="ring-fill" id="ring-fill"
+                transform="rotate(-90 50 50)" />
+            </svg>
+            <div class="score-inner">
+              <div class="score-number" id="score-number">0</div>
+              <div class="score-denom">/100</div>
+            </div>
+          </div>
+          <div class="score-details">
+            <div class="grade-chip" id="grade-chip">
+              <span id="grade-emoji" aria-hidden="true">🌱</span>
+              <span id="grade-text">Grade --</span>
+            </div>
+            <div class="grade-word" id="grade-word">—</div>
+            <div class="product-name" id="product-name">Loading…</div>
+            <div class="product-category" id="product-category"></div>
+          </div>
+        </div>
+
+        <div class="score-bar-wrap" aria-hidden="true">
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="score-bar-fill"></div>
+          </div>
+          <div class="score-bar-ticks">
+            <span>Harmful</span><span>Moderate</span><span>Excellent</span>
+          </div>
+        </div>
+
+        <div class="info-card co2-card">
+          <div class="info-card-icon" aria-hidden="true">🌍</div>
+          <div class="info-card-content">
+            <div class="info-card-label">Carbon Footprint</div>
+            <div class="info-card-value" id="co2-value">— kg CO₂</div>
+            <div class="co2-explainer">
+              CO₂ emitted across this product's full lifecycle.
+              <strong>Higher CO₂ = more climate harm.</strong>
+              Eco materials cut this by up to 10×.
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card reason-card">
+          <div class="info-card-icon" aria-hidden="true">📋</div>
+          <div class="info-card-content">
+            <div class="info-card-label">Why this score?</div>
+            <div class="info-card-value reason-text" id="reason-text">—</div>
+          </div>
+        </div>
+
+        <div class="timestamp" id="timestamp" aria-live="polite"></div>
+
+      </div>
+    </div><!-- /pane-score -->
+
+    <!-- ══ TAB: PROFILE ════════════════════════════════════════ -->
+    <div id="pane-profile" class="tab-pane" style="display:none">
+      <div class="profile-pane">
+
+        <!-- Onboarding Header Banner -->
+        <div id="onboarding-banner" class="onboarding-banner" style="display:none">
+          <div class="ob-icon">🎉</div>
+          <div class="ob-title">EcoScore is Active!</div>
+          <div class="ob-desc">You're ready to shop sustainably on any website. Log in to track your carbon savings across the web!</div>
+        </div>
+
+        <!-- LOGGED-OUT STATE -->
+        <div id="profile-logged-out" class="profile-state-view">
+          <div class="auth-header">
+            <span class="auth-leaf">🌎</span>
+            <h3>Sync Your Green Impact</h3>
+            <p>Log in with Google to save your scanned pages count, average product ratings, and calculated carbon offsets dynamically.</p>
+          </div>
+
+          <div class="auth-actions">
+            <!-- Google Brand Login Button -->
+            <button class="google-signin-btn" id="btn-google-login">
+              <span class="google-icon-wrapper">
+                <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                </svg>
+              </span>
+              <span class="google-btn-text">Sign in with Google</span>
+            </button>
+
+            <div class="sandbox-divider">
+              <span>or test immediately</span>
+            </div>
+
+            <!-- Sandbox developer login -->
+            <button class="sandbox-login-btn" id="btn-sandbox-login">
+              <span class="sandbox-icon">🛠️</span>
+              <span>Developer Sandbox Login</span>
+            </button>
+            <p class="sandbox-hint">Registers a mock profile instantly in the backend database. Highly recommended for zero-configuration testing!</p>
+          </div>
+        </div>
+
+        <!-- LOGGED-IN STATE -->
+        <div id="profile-logged-in" class="profile-state-view" style="display:none">
+          
+          <!-- User Profile Card -->
+          <div class="user-profile-card">
+            <img id="profile-avatar" class="profile-avatar" src="https://lh3.googleusercontent.com/a/default-user=s96-c" alt="Profile picture" />
+            <div class="user-info-text">
+              <h3 id="profile-name">Eco Explorer</h3>
+              <p id="profile-email">eco.explorer@gmail.com</p>
+              <div id="badge-rank" class="rank-badge rank-warrior">Susty Novice</div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-dashboard">
+            <h4 class="stats-title">My Environmental Impact</h4>
+            
+            <div class="stats-grid">
+              
+              <!-- Total Scans -->
+              <div class="stat-card">
+                <div class="stat-card-icon">🔍</div>
+                <div class="stat-card-data">
+                  <div class="stat-card-value" id="stat-scans">0</div>
+                  <div class="stat-card-label">Pages Scanned</div>
+                </div>
+              </div>
+
+              <!-- Avg Score -->
+              <div class="stat-card">
+                <div class="stat-card-icon">🌱</div>
+                <div class="stat-card-data">
+                  <div class="stat-card-value" id="stat-avg">0</div>
+                  <div class="stat-card-label">Average Score</div>
+                </div>
+              </div>
+
+              <!-- Carbon Saved -->
+              <div class="stat-card full-width">
+                <div class="stat-card-icon">🌍</div>
+                <div class="stat-card-data">
+                  <div class="stat-card-value"><span id="stat-carbon">0.0</span> <span class="unit">kg CO₂</span></div>
+                  <div class="stat-card-label">CO₂ Offset Savings</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Progress to next rank -->
+            <div class="rank-progress-wrap">
+              <div class="rank-progress-labels">
+                <span>Rank Progress</span>
+                <span id="rank-progress-pct">0%</span>
+              </div>
+              <div class="rank-progress-bar">
+                <div id="rank-progress-fill" class="rank-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="rank-progress-hint" id="rank-progress-hint">Save 5.0 kg more to become a Susty Hero!</div>
+            </div>
+            
+          </div>
+
+          <button class="btn-logout" id="btn-logout">🚪 Sign Out</button>
+        </div>
+
+        <div id="auth-feedback" class="auth-feedback"></div>
+
+      </div>
+    </div><!-- /pane-profile -->
+
+    <!-- ══ TAB: AI SETUP ═══════════════════════════════════════ -->
+    <div id="pane-settings" class="tab-pane" style="display:none">
+      <div class="settings-pane">
+
+        <!-- AI Status Banner -->
+        <div class="ai-status-banner" id="ai-status-banner">
+          <div class="ai-status-icon" id="ai-status-icon">🔴</div>
+          <div>
+            <div class="ai-status-title" id="ai-status-title">AI Search Not Active</div>
+            <div class="ai-status-sub" id="ai-status-sub">Add your free Gemini API key below</div>
+          </div>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="settings-section">
+          <label class="settings-label" for="api-key-input">
+            Gemini API Key
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="settings-link">Get free key →</a>
+          </label>
+          <div class="key-input-wrap">
+            <input
+              type="password"
+              id="api-key-input"
+              class="key-input"
+              placeholder="AIzaSy…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="key-toggle-btn" id="key-toggle-btn" title="Show/hide key">👁</button>
+          </div>
+          <div class="key-hint">Your key is stored locally in Chrome and never sent anywhere except Google's API.</div>
+        </div>
+
+        <div class="settings-actions">
+          <button class="btn-save" id="btn-save-key">Save Key &amp; Enable AI</button>
+          <button class="btn-clear" id="btn-clear-key">Remove Key</button>
+        </div>
+
+        <div class="save-feedback" id="save-feedback"></div>
+
+        <!-- How it works -->
+        <div class="settings-section how-it-works">
+          <div class="hiw-title">🤖 How AI Search Works</div>
+          <div class="hiw-step">
+            <span class="hiw-num">1</span>
+            <span>You visit any product page on any shopping website</span>
+          </div>
+          <div class="hiw-step">
+            <span class="hiw-num">2</span>
+            <span>EcoScore detects the product title &amp; materials</span>
+          </div>
+          <div class="hiw-step">
+            <span class="hiw-num">3</span>
+            <span>Gemini AI searches for greener alternatives globally</span>
+          </div>
+          <div class="hiw-step">
+            <span class="hiw-num">4</span>
+            <span>Click any alternative to search &amp; buy it online</span>
+          </div>
+          <div class="hiw-note">
+            ✅ Free tier: 1,500 requests/day · No credit card required
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /pane-settings -->
+
+    <!-- ── Footer ── -->
+    <footer class="popup-footer">
+      <span>EcoScore v2.0</span>
+      <span class="dot" aria-hidden="true">•</span>
+      <span>Works on every shopping site 🌱</span>
+    </footer>
+
+  </div>
+
+  <script src="ecoDatabase.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
